@@ -1,4 +1,5 @@
-#   Copyright 2014 Jianfu Chen <csjfchen@gmail.com>
+#   Copyright 2014 Jianfu Chen 
+#   csjfchen *AT* gmail
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -50,3 +51,11 @@ def map(func, local_args, global_arg=None,
     finally:
         if global_arg_name is not None:
             del globals()[global_arg_name]
+
+def random_string(length, prefix='', suffix=''):
+    import string
+    return '{}{}{}'.format(
+        prefix+'_' if prefix else '',
+        ''.join(random.sample(string.ascii_letters + string.digits, length)),
+        '_'+suffix if suffix else ''
+    )
