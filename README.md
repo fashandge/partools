@@ -27,11 +27,12 @@ def section_sum(section, array):
     return array[section].sum()
         
 # split the big array by rows, each worker sum up one section of 10000 rows at a time
-# To avoid expensive copy of the big array, set it as the global_arg
 section_size = 10000
 sections = [xrange(start, start+section_size) 
             for start in xrange(0, big_array.shape[0], section_size)]
-            
+
+# To avoid expensive copy of the big array, set it as the global_arg. The key assumption
+# is that the worker function will NOT modify the big array (read-only).
 section_sum_list = parmap.map(section_sum, sections, global_arg=big_array,
                               chunksize=25, processes=4)
 total_sum = sum(section_sum_list) # reduce results
