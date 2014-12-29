@@ -15,10 +15,10 @@ A parallel version of map function is designed for infinitely parallelizable tas
         import numpy as np
         import parmap
         
-        # a large data structure to be processed
+        # Suppose we want to compute the sum of a large array
         big_array = np.random.rand((1e6, 100))
         
-        # worker function
+        # worker function that sums of a sub section of the array
         def section_sum(rows, array):
             return array[rows].sum()
         
