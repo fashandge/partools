@@ -1,4 +1,4 @@
-python_parmap
+parmap
 =============
 
 A parallel version of map function. It is designed for infinitely parallelizable tasks on a single machine with multiple cores, in a memory-efficient way. It can drop-in replace the standard map function in most cases, and harness the power of multiple cores. It is based on the pathos and toolz packages.
