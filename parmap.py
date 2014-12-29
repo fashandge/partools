@@ -18,7 +18,7 @@ import string
 
 def map(func, local_args, global_arg=None,
         chunksize=1, processes=2):
-    ''' A parallel version of standard map function.
+    ''' A parallel version of standard map function. It is a blocking operation and return ordered results.
     
     This function is designed for infinitely parallelizable tasks on a single machine with multiple cores. It is 
     an enhanced version of standard multiprocessing.Pool.map and a wrapper of pathos.multiprocessing.map.
@@ -54,6 +54,9 @@ def map(func, local_args, global_arg=None,
         
         processes: number of children processes (workers) in the pool, set it up to the number of physical cores.
         Same as in the standard Pool.map. If processes=1, it is equivalent to non-parallel map.
+        
+     Returns:
+        a list of objects each of which is the processing result of an element in the iterable local_args.
         
      Example usages:
         See main function.
