@@ -96,6 +96,7 @@ def map(func, local_args, global_arg=None,
         return result
     except Exception as ex:
         print 'exception: {}'.format(ex)
+        return None
     finally:
         glb = globals()
         if global_arg_name is not None and global_arg_name in glb:
