@@ -17,7 +17,7 @@ import numpy as np
 import parmap
         
 # Suppose we want to compute the sum of a large array
-big_array = np.random.rand((1e6, 100))
+big_array = np.random.rand(1e6, 100)
 
 # worker function that sums of a sub section of the array
 def section_sum(rows, array):
@@ -26,6 +26,6 @@ def section_sum(rows, array):
 # split the big array by rows, each worker sum up one section of 10000 rows at a time
 # To avoid expensive copy of the big array, set it as the global_arg
 section_sum_list = parmap.map(section_sum, xrange(big_array.shape[0]), global_arg=big_array,
-                              chunk_size=10000, processes=4)
+                              chunksize=10000, processes=4)
 total_sum = sum(section_sum_list) # reduce results
 ```
