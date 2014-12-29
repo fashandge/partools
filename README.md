@@ -11,7 +11,10 @@ A parallel version of map function is designed for infinitely parallelizable tas
  However, in certain cases, the children processes just read different parts of the big data structure, do some processing and return some results. It is unnecessary to copy the big data structure, which is also enabled by the copy-on-write mechanism of linux. The solution is to let the big data structrue be a *global* variable of the calling module for multiprocessing, and do NOT pass the data  structure directly as an argument for worker function. This function makes this solution tidy and transparent.
     
 ###Example usages:
+\* Note: In this example, the parallel map is not faster than non-parallel map or simply numpy.sum. This is for demonstrating example usage and testing correctness. 
 
+See more discussions and a more realistic scenario on parallel processing of pandas data frame at [StackOverflow](http://stackoverflow.com/a/27683040/1100430)
+        
 ```python
 import numpy as np
 import parmap
