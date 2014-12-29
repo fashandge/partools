@@ -12,14 +12,58 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+import toolz
+import string
 
 def map(func, local_args, global_arg=None,
         chunksize=1, processes=2):
-    '''
-    global_arg: a global variable shared with all processes intended to be read-only
-    so that we can utilize the copy-on-write mechanism in linux to avoid unnecceary copy of data,
-    this is good for parallel processing of large data structure, like a big pandas dataframe (pass
-    df as global_arg to avoid unncessary copy, and indices of subset as local_args that is to be copied)
+    ''' A parallel version of standard map function.
+    
+    This function is designed for infinitely parallelizable tasks on a single machine with multiple cores. 
+    It has the following features:
+    1. Ease of use. It can serve almost a drop-in replacement for standard non-parallel map function, while 
+    magically exploiting the multiple cores in your box. That is, the worker function can be almost 
+    arbitrary function, thanks to the pathos package (https://github.com/uqfoundation/pathos/blob/master/pathos)
+    that uses dill package. You can use parmap.map anywhere in your source code, rather than just in the main          function.
+    2. Using this function, you can avoid unnecessary copy of read-only large data structure. Suppose we want 
+    to process a big pandas. DataFrame by sub sections using multiple cores. By default, the data structure will be     pickled if you pass it as an argument of the worker function. If the data structure is large, the additional 
+    memory cost can be unaffordable, and the time for pickling large data structure can often make multiprocessing 
+    slower than the single-threaded version. However, in certain cases, the children processes just read 
+    different parts of the big data structure, do some processing and return some results. It is unncessary to copy
+    the big data structure, which is also enabled by the copy-on-write mechanism of linux. The solution is to let 
+    the big data structrue be a global variable of the calling module for multiprocessing, and do NOT pass the data
+    structure directly as an argument for worker function. This function makes this solution tidy and transparent.
+    
+    args:
+        func: a worker function that accepts either 1 (when global_arg is None) 
+        or 2 (when global_arg is not None) arguments
+        
+        local_args: An iterable of data you have to copy to children processes, e.g., the array indices. The               cildren processes N=chunksize of them at a time.
+        
+        global_arg: the large object you want to share with children processes, but don't want to copy 
+        to children process, like a big pandas dataframe, a large numpy array. The worker function should use 
+        it as if it is read-only, otherwise expensive copy operation follows.
+        
+        chunksize: number of items to be assigned to a child process at a time.
+        
+        processes: number of children processes (workers) in the pool, set it up to the number of physical cores.
+        If processes=1, it is equivalent to non-parallel map.
+        
+     Example usages:
+        import numpy as np
+        import parmap
+        
+        big_array = np.random.rand((1e6, 100))
+        
+        def section_sum(rows, array):
+            return array[rows].sum()
+        
+        # split the big array by rows, each worker sum up one section of 10000 rows at a time
+        # To avoid expensive copy of the big array, set it as the global_arg
+        section_sum_list = parmap.map(section, xrange(big_array.shape[0]), global_arg=big_array,
+                               chunk_size=10000, processes=4)
+        total_sum = sum(section_sum_list) # reduce results
+        
     '''
     global_arg_name = None
     try:
@@ -53,7 +97,6 @@ def map(func, local_args, global_arg=None,
             del globals()[global_arg_name]
 
 def random_string(length, prefix='', suffix=''):
-    import string
     return '{}{}{}'.format(
         prefix+'_' if prefix else '',
         ''.join(random.sample(string.ascii_letters + string.digits, length)),
