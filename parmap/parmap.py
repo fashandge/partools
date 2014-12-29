@@ -19,6 +19,8 @@ import string
 import toolz
 import pathos.multiprocessing as mp
 
+__version__ = '0.1.0'
+
 def map(func, local_args, global_arg=None,
         chunksize=1, processes=2):
     ''' A parallel version of standard map function. It is a blocking operation and return ordered results.
