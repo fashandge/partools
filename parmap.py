@@ -58,7 +58,8 @@ def map(func, local_args, global_arg=None,
         Same as in the standard Pool.map. If processes=1, it is equivalent to non-parallel map.
         
      Returns:
-        a list of objects each of which is the processing result of an element in the iterable local_args.
+        a list of objects each of which is the processing result of an element in the iterable local_args, or None 
+        if exception is caught.
         
      Example usages:
         See main function.
