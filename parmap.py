@@ -70,7 +70,7 @@ def map(func, local_args, global_arg=None,
         if global_arg is None:
             process_func = func
         else:
-            global_arg_name = random_string(10, prefix='_tmp_global_arg')
+            global_arg_name = _random_string(10, prefix='_tmp_global_arg')
             # use a temporary global variable to hold the large object global_arg
             globals()[global_arg_name] = global_arg
             
@@ -104,7 +104,7 @@ def map(func, local_args, global_arg=None,
             del glb[global_arg_name]
 
 _charset = string.ascii_letters + string.digits
-def random_string(length, prefix='', suffix=''):
+def _random_string(length, prefix='', suffix=''):
     return '{}{}{}'.format(
         prefix+'_' if prefix else '',
         ''.join(random.sample(_charset, length)),
