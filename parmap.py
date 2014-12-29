@@ -96,7 +96,7 @@ def map(func, local_args, global_arg=None,
 
         return result
     except Exception as ex:
-        print 'exception: {}'.format(ex)
+        print 'exception in parallel map: {}'.format(ex)
         return None
     finally:
         glb = globals()
