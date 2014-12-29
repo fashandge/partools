@@ -83,7 +83,8 @@ def map(func, local_args, global_arg=None,
                 global_arg_name=global_arg_name)
 
         if processes == 1:
-            result = list(toolz.map(process_func, local_args))
+            import __builtin__
+            result = __builtin__.map(process_func, local_args)
         else:
             import pathos.multiprocessing as mp
             pool = mp.Pool(processes=processes)
