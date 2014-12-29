@@ -14,8 +14,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import toolz
+import random
 import string
+import toolz
 import pathos.multiprocessing as mp
 
 def map(func, local_args, global_arg=None,
