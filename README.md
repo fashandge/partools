@@ -31,6 +31,8 @@ def section_sum(section, array):
 section_size = 10000
 sections = [xrange(start, start+section_size) 
             for start in xrange(0, big_array.shape[0], section_size)]
+            
+# The result will be equivalent to calling standard map(section_sum, sections)
 section_sum_list = parmap.map(section_sum, sections, global_arg=big_array,
                               chunksize=25, processes=4)
 total_sum = sum(section_sum_list) # reduce results
