@@ -20,7 +20,8 @@ def map(func, local_args, global_arg=None,
         chunksize=1, processes=2):
     ''' A parallel version of standard map function.
     
-    This function is designed for infinitely parallelizable tasks on a single machine with multiple cores. 
+    This function is designed for infinitely parallelizable tasks on a single machine with multiple cores. It is 
+    an enhanced version of standard multiprocessing.Pool.map and a wrapper of pathos.multiprocessing.map.
     It has the following features:
     
     1. Ease of use. It can serve almost a drop-in replacement for standard non-parallel map function, while 
@@ -39,10 +40,11 @@ def map(func, local_args, global_arg=None,
     structure directly as an argument for worker function. This function makes this solution tidy and transparent.
     
     args:
-        func: a worker function that accepts either 1 (when global_arg is None) 
-        or 2 (when global_arg is not None) arguments
+        func: a worker function func(local_arg, global_arg) that accepts either 1 (when global_arg is None) 
+        or 2 (when global_arg is not None) arguments. Local_arg specifies the data to work on (e.g., indices of an array); 
+        global_arg is a big object to share but we wish to avoid copying (e.g., a big numpy array).
         
-        local_args: An iterable of data you have to copy to children processes, e.g., the array indices. The               cildren processes N=chunksize of them at a time.
+        local_args: An iterable of data you have to copy to children processes, e.g., the array indices.               cildren processes N=chunksize of them at a time.
         
         global_arg: the large object you want to share with children processes, but don't want to copy 
         to children process, like a big pandas dataframe, a large numpy array. The worker function should use 
