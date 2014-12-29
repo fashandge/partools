@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 #   Copyright 2014 Jianfu Chen 
 #   csjfchen *AT* gmail
 #
@@ -109,3 +110,21 @@ def random_string(length, prefix='', suffix=''):
         ''.join(random.sample(string.ascii_letters + string.digits, length)),
         '_'+suffix if suffix else ''
     )
+
+if __name__ == '__main__':
+        import numpy as np
+
+        # Suppose we want to compute the sum of a large array
+        big_array = np.random.rand((1e6, 100))
+        
+        # worker function that sums of a sub section of the array
+        def section_sum(rows, array):
+            return array[rows].sum()
+        
+        # split the big array by rows, each worker sum up one section of 10000 rows at a time
+        # To avoid expensive copy of the big array, set it as the global_arg
+        section_sum_list = map(section_sum, xrange(big_array.shape[0]), global_arg=big_array,
+                               chunk_size=10000, processes=4)
+        total_sum = sum(section_sum_list) # reduce results
+        
+        assert(total_sum == big_array.sum())
