@@ -38,3 +38,7 @@ total_sum = sum(section_sum_list) # reduce results
 
 assert(total_sum == big_array.sum())
 ```
+
+### Dependencies
++ [pathos 0.2a1.dev](https://github.com/uqfoundation/pathos/blob/master/pathos)
++ [toolz 0.6.0](https://github.com/pytoolz/toolz)
