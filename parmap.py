@@ -34,7 +34,8 @@ def map(func, local_args, global_arg=None,
     function.
     
     2. Using this function, you can avoid unnecessary copy of read-only large data structure. Suppose we want 
-    to process a big pandas. DataFrame by sub sections using multiple cores. By default, the data structure will be     pickled if you pass it as an argument of the worker function. If the data structure is large, the additional 
+    to process a big pandas. DataFrame by sub sections using multiple cores. By default, the data structure will be
+    pickled if you pass it as an argument of the worker function. If the data structure is large, the additional 
     memory cost can be unaffordable, and the time for pickling large data structure can often make multiprocessing 
     slower than the single-threaded version. However, in certain cases, the children processes just read 
     different parts of the big data structure, do some processing and return some results. It is unncessary to copy
@@ -47,7 +48,8 @@ def map(func, local_args, global_arg=None,
         or 2 (when global_arg is not None) arguments. Local_arg specifies the data to work on (e.g., indices of an array); 
         global_arg is a big object to share but we wish to avoid copying (e.g., a big numpy array).
         
-        local_args: An iterable of data you have to copy to children processes, e.g., the array indices.               cildren processes N=chunksize of them at a time.
+        local_args: An iterable of data you have to copy to children processes, e.g., the array indices. children processes 
+        N=chunksize of them at a time.
         
         global_arg: the large object you want to share with children processes, but don't want to copy 
         to children process, like a big pandas dataframe, a large numpy array. The worker function should use 
