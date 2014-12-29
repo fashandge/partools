@@ -14,7 +14,7 @@ setup(name='parmap',
       long_description=long_description,
       author='Jianfu Chen',
       license='APACHE-2.0',
-      url='https://github.com/fashandge/python-parmap',
+      url='https://github.com/fashandge/parmap',
       py_modules=['parmap'],
       classifiers=[
         'Development Status :: 1 - Beta',
