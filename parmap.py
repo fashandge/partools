@@ -64,7 +64,9 @@ def map(func, local_args, global_arg=None,
     
     global_arg_name = None
     try:
-        if global_arg is not None:
+        if global_arg is None:
+            process_func = func
+        else:
             global_arg_name = random_string(10, prefix='_tmp_global_arg')
             # use a temporary global variable to hold the large object global_arg
             globals()[global_arg_name] = global_arg
@@ -79,8 +81,6 @@ def map(func, local_args, global_arg=None,
             process_func = toolz.partial(
                 func_with_global,
                 global_arg_name=global_arg_name)
-        else:
-            process_func = func
 
         if processes == 1:
             result = list(toolz.map(process_func, local_args))
