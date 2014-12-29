@@ -13,8 +13,10 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
 import toolz
 import string
+import pathos.multiprocessing as mp
 
 def map(func, local_args, global_arg=None,
         chunksize=1, processes=2):
@@ -86,7 +88,6 @@ def map(func, local_args, global_arg=None,
             import __builtin__
             result = __builtin__.map(process_func, local_args)
         else:
-            import pathos.multiprocessing as mp
             pool = mp.Pool(processes=processes)
             result = pool.map(process_func, local_args, chunksize=chunksize)
             pool.close()
