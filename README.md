@@ -34,3 +34,4 @@ total_sum = sum(section_sum_list) # reduce results
 
 assert(total_sum == big_array.sum())
 ```
+See more discussions and another example at [StackOverflow](http://stackoverflow.com/a/27683040/1100430)
