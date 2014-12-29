@@ -22,10 +22,13 @@ def map(func, local_args, global_arg=None,
     
     This function is designed for infinitely parallelizable tasks on a single machine with multiple cores. 
     It has the following features:
+    
     1. Ease of use. It can serve almost a drop-in replacement for standard non-parallel map function, while 
     magically exploiting the multiple cores in your box. That is, the worker function can be almost 
     arbitrary function, thanks to the pathos package (https://github.com/uqfoundation/pathos/blob/master/pathos)
-    that uses dill package. You can use parmap.map anywhere in your source code, rather than just in the main          function.
+    that uses dill package. You can use parmap.map anywhere in your source code, rather than just in the main 
+    function.
+    
     2. Using this function, you can avoid unnecessary copy of read-only large data structure. Suppose we want 
     to process a big pandas. DataFrame by sub sections using multiple cores. By default, the data structure will be     pickled if you pass it as an argument of the worker function. If the data structure is large, the additional 
     memory cost can be unaffordable, and the time for pickling large data structure can often make multiprocessing 
