@@ -108,6 +108,58 @@ def map(func, local_args, global_arg=None,
         if global_arg_name is not None and global_arg_name in glb:
             del glb[global_arg_name]
 
+def dfg_apply(grouped, by_cols, apply_func, processes=2,
+              **apply_kwargs):
+    '''parallel apply for grouped pandas dataframe
+    This is mostly equivalent to 
+        grouped.apply(toolz.partitial(
+                        apply_func, **apply_kwargs))
+    with by_cols as normal columns in the result
+
+    args:
+        grouped: grouped pandas dataframe
+        by_cols: a single or a list of columns grouped by
+        apply_func: the function to apply to each group
+        apply_kwargs: args for apply_func
+
+    Returns:
+        a data frame
+    '''
+    import pandas as pd
+    n_g = [(name, group) for name, group in grouped]
+    n_group = len(n_g)
+    section_size = int(n_group*1.0 / processes)
+    sections = [range(start, start+section_size) 
+                for start in xrange(0, n_group, section_size)]
+
+    def process_section(section, n_g, by_cols=by_cols):
+        # return a list of df 
+        result = []
+        print len(section)
+        print by_cols
+        if not isinstance(by_cols, list):
+            by_cols = [by_cols]
+        for name, group in [n_g[idx] for idx in section]:
+            df = apply_func(group, **apply_kwargs)
+            if not isinstance(name, tuple):
+                name = [name]
+            for name, col in zip(name, by_cols):
+                if col not in df.columns:
+                    df[col] = name
+            result.append(df)
+        remain = filter(lambda col: col not in by_cols,
+                        df.columns) 
+        columns = by_cols + remain
+        result = [df[columns] for df in result]
+        return result
+
+    results = map(process_section, sections, global_arg=n_g,
+                  chunksize=section_size, processes=processes)
+
+    result = pd.concat(toolz.concat(results))
+    return result
+        
+
 _charset = string.ascii_letters + string.digits
 def _random_string(length, prefix='', suffix=''):
     return '{}{}{}'.format(
@@ -115,6 +167,8 @@ def _random_string(length, prefix='', suffix=''):
         ''.join(random.sample(_charset, length)),
         '_'+suffix if suffix else ''
     )
+
+
 
 if __name__ == '__main__':
         ''' Note: In this example, the parallel map is not faster than 

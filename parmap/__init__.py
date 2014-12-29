@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from .parmap import map
+from .parmap import map, dfg_apply
 
 __version__ = '0.1.0'
 
