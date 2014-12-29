@@ -95,8 +95,9 @@ def map(func, local_args, global_arg=None,
     except Exception as ex:
         print 'exception: {}'.format(ex)
     finally:
-        if global_arg_name is not None:
-            del globals()[global_arg_name]
+        glb = globals()
+        if global_arg_name is not None and global_arg_name in glb:
+            del glb[global_arg_name]
 
 _charset = string.ascii_letters + string.digits
 def random_string(length, prefix='', suffix=''):
