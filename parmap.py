@@ -142,4 +142,4 @@ if __name__ == '__main__':
                                chunksize=25, processes=4)
         total_sum = sum(section_sum_list) # reduce results
         
-        assert np.allclose(total_sum == big_array.sum())
+        assert np.allclose(total_sum, big_array.sum())
