@@ -20,8 +20,8 @@ import parmap
 big_array = np.random.rand(1e6, 100)
 
 # worker function that sums of a sub section of the array
-def section_sum(rows, array):
-    return array[rows].sum()
+def section_sum(section, array):
+    return array[section].sum()
         
 # split the big array by rows, each worker sum up one section of 10000 rows at a time
 # To avoid expensive copy of the big array, set it as the global_arg
