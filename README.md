@@ -1,7 +1,7 @@
 python_parmap
 =============
 
-A parallel version of map function is designed for infinitely parallelizable tasks on a single machine with multiple cores. It depends on the pathos and toolz packages.
+A parallel version of map function. It is designed for infinitely parallelizable tasks on a single machine with multiple cores, in a memory-efficient way. It can drop-in replace the standard map function in most cases, and harness the power of multiple cores. It depends on the pathos and toolz packages.
     It has the following features:
  
  +  **Ease of use**. It can serve almost a drop-in replacement for the standard non-parallel map function, while magically exploiting the multiple cores in your box. That is, the worker function can be almost arbitrary function, thanks to the [pathos package](https://github.com/uqfoundation/pathos/blob/master/pathos) that uses dill package. You can use parmap.map anywhere in your source code, rather than just in the main  function.
