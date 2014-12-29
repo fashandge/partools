@@ -116,7 +116,8 @@ if __name__ == '__main__':
         A more realistic scenario I find good speedup with parallel map is when processing a big pandas.DataFrame
         (e.g., groupby then aggregation or apply), we let each worker process one part of the big dataframe, and 
         let the dataframe be the global_arg, which saves expensive copy operations, hence enjoying the speedup 
-        from multiprocessing.
+        from multiprocessing. See more discussions and another example at 
+        [StackOverflow](http://stackoverflow.com/a/27683040/1100430)
         '''
         
         import numpy as np
