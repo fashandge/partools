@@ -42,5 +42,6 @@ assert(total_sum == big_array.sum())
 
 ### Dependencies
 Tested with python 2.7 and the following packages:
-+ [pathos 0.2a1.dev](https://github.com/uqfoundation/pathos/blob/master/pathos)
-+ [toolz 0.6.0](https://github.com/pytoolz/toolz)
++ [pathos 0.2a1.dev](http://danse.cacr.caltech.edu/packages/dev_danse_us/pathos-0.2a.dev-20130811.zip) and [installation guide](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/Installation)
++ [toolz 0.6.0](https://pypi.python.org/pypi/toolz)
++ [dill 0.2.1](https://pypi.python.org/pypi/dill)
