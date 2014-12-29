@@ -42,25 +42,27 @@ def map(func, local_args, global_arg=None,
         
         global_arg: the large object you want to share with children processes, but don't want to copy 
         to children process, like a big pandas dataframe, a large numpy array. The worker function should use 
-        it as if it is read-only, otherwise expensive copy operation follows.
+        it as if it is read-only, otherwise expensive copy operation follows. 
         
-        chunksize: number of items to be assigned to a child process at a time.
+        chunksize: number of items to be assigned to a child process at a time. Same as in the standard Pool.map.
         
         processes: number of children processes (workers) in the pool, set it up to the number of physical cores.
-        If processes=1, it is equivalent to non-parallel map.
+        Same as in the standard Pool.map. If processes=1, it is equivalent to non-parallel map.
         
      Example usages:
         import numpy as np
         import parmap
         
+        # a large data structure to be processed
         big_array = np.random.rand((1e6, 100))
         
+        # worker function
         def section_sum(rows, array):
             return array[rows].sum()
         
         # split the big array by rows, each worker sum up one section of 10000 rows at a time
         # To avoid expensive copy of the big array, set it as the global_arg
-        section_sum_list = parmap.map(section, xrange(big_array.shape[0]), global_arg=big_array,
+        section_sum_list = parmap.map(section_sum, xrange(big_array.shape[0]), global_arg=big_array,
                                chunk_size=10000, processes=4)
         total_sum = sum(section_sum_list) # reduce results
         
@@ -69,7 +71,12 @@ def map(func, local_args, global_arg=None,
     try:
         if global_arg is not None:
             global_arg_name = random_string(10, prefix='_tmp_global_arg')
+            # use a temporary global variable to hold the large object global_arg
             globals()[global_arg_name] = global_arg
+            
+            # wrap the original worker function using a temporary global variable name
+            # so that we just pass a name (string) instead of the actual big object (global_arg) to 
+            # the wrapped worker function
             def func_with_global(local_args, global_arg_name):
                 global_arg = globals()[global_arg_name] 
                 return func(local_args, global_arg)
