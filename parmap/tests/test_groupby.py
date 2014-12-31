@@ -1,8 +1,11 @@
 import numpy as np
 import pandas as pd
-import parmap
-#from IPython.core.debugger import Tracer
-#import src.parmap.parmap as parmap
+develop = False
+if develop:
+    import src.parmap.parmap as parmap
+    from IPython.core.debugger import Tracer
+else:
+    import parmap
 
 # settings
 processes = 4

@@ -320,7 +320,6 @@ def _groupby_apply_split(df, by, apply_func, processes=2,
     if chunksize == -1:
         chunksize = min(default_chunk_size,
                         _auto_chunksize(ngroups, processes))
-    print chunksize
     sections = _split_groups(grouped, chunksize)
     #timer.stop('split groups')
     grouped = None
