@@ -1,8 +1,7 @@
-parmap
+partools
 =============
 
-A parallel version of map function. It is designed for infinitely parallelizable tasks on a single machine with multiple cores, in a memory-efficient way. It can drop-in replace the standard map function in most cases, and harness the power of multiple cores. It also has utility for parallel processing of the popular pandas dataframes. It is based on the pathos and toolz packages.
-    It has the following features:
+Utilitiy functions for python parallel processing for big data structure with multicores on a single machine. Avoid unnecessary copy of read-only large data structure. It includes: 1. A parallel version of `map` function. It is designed for infinitely parallelizable tasks on a single machine with multiple cores, in a memory-efficient way. It can drop-in replace the standard map function in most cases, and harness the power of multiple cores. 2. utility function for parallel processing of the popular pandas dataframes. The package is based on the pathos and toolz packages. It has the following features:
  
  +  **Ease of use**. It can serve almost a drop-in replacement for the standard non-parallel map function, while magically exploiting the multiple cores in your box. Optionally, if you encounter worker function pickling issue, set use\_pathos=True (require [pathos package](https://github.com/uqfoundation/pathos/blob/master/pathos) that uses dill package). 
  
@@ -19,7 +18,7 @@ See more discussions and a more realistic scenario on parallel processing of pan
         
 ```python
 import numpy as np
-import parmap
+import partools
         
 # Suppose we want to compute the sum of a large array
 big_array = np.random.rand(1e6, 100)
@@ -35,7 +34,7 @@ sections = [xrange(start, start+section_size)
 
 # To avoid expensive copy of the big array, set it as the global_arg. The key assumption
 # is that the worker function will NOT modify the big array (read-only).
-section_sum_list = parmap.map(section_sum, sections, global_arg=big_array,
+section_sum_list = partools.map(section_sum, sections, global_arg=big_array,
                               chunksize=25, processes=4)
 total_sum = sum(section_sum_list) # reduce results
 
