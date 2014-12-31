@@ -18,8 +18,12 @@ def groupby_apply(df, by, apply_func,
         column names to groupby
     apply_func : function
         apply function
-    algorithm : string, default 'default'
-        specify which algorithm to use. Leave it as default most of the time
+    algorithm : string, default 'default' 
+        one of 'iter'('default'), 'iter_local', 'split', or 'sort'; 
+        specify which algorithm to use. Leave it as default most of the time.
+        Or set it to 'split', can be faster than 'iter' and 'iter_local';
+        'sort' can be fastest if sorting df is quick. 'iter_local' is usually 
+        the slowest one.
     chunksize : int, default -1
         use -1 to choose chunksize automatically 
     groupby_kwargs : optional keyword arguments
@@ -30,19 +34,27 @@ def groupby_apply(df, by, apply_func,
     A dataframe : usually the same as non-parallel version
     '''
     # first groupby df, iterate and process each group
-    # the grouped object is in global_arg, hence avoid copying
+    # pass position of groups to worker function, hence avoid copying
+    # the DataFrameGroupby object and groups
     if algorithm == 'default' or algorithm=='iter':
         alg = _groupby_apply_iter
 
     # first groupby df, iterate and process each group
-    # the grouped object is in local_arg
+    # directly iterate DataFrameGroupby and pass groups to worker function
     elif algorithm == 'iter_local':
         alg = _groupby_apply_iter_local
 
-    # first groupby df, then split df into sections without 
-    # splitting a same group; then do groupy.apply for each df section
+    # first groupby df, then split df into sections each of which has
+    # multiple groups. Applying over multiple groups together is potentiall
+    # faster than applying over invidual groups one by one.
+    # 
     elif algorithm == 'split':
         alg = _groupby_apply_split
+
+    #first sort then split the df into sections, and process each section in parallel
+    #This can be the fastest version of groupby_apply*, if sorting df is quick.
+    elif algorithm == 'sort':
+        alg = _groupby_apply_sort
 
     return alg(df, by, apply_func,
                processes=processes, chunksize=chunksize,
@@ -173,4 +185,56 @@ def _split_groups(grouped, chunksize):
                          if igroup < ngroups))
             for start in xrange(0, ngroups, chunksize)]
 
+def _groupby_apply_sort(df, by, apply_func, processes=2,
+                        chunksize=-1, use_pathos=False,
+                        keep_order=True,
+                        **kwargs):
+    '''first sort then split the df into sections, and process each section in parallel
 
+    This can be the fastest version of groupby_apply*, if sorting df is quick.
+
+    parameters
+    ----------
+    keep_order : boolean, default True
+        whether the original order of df after processing
+    '''
+    # sort df by groupby columns
+    order_col = parmap._random_string(10, prefix='_order')
+    df[order_col] = np.arange(df.shape[0])
+    df.sort(by, inplace=True)
+
+    if chunksize == -1:
+        chunksize = 1
+    sections = _split_df_by_groups(df, by, processes)
+    worker = toolz.partial(_group_apply_dfsection, by=by, 
+                           apply_func=apply_func,
+                           **kwargs)
+    result = parmap.map(
+        worker,
+        sections, 
+        global_arg=df,
+        processes=processes,
+        chunksize=chunksize,
+        use_pathos=use_pathos
+    )
+    result = pd.concat(result)
+
+    # recover order
+    if keep_order:
+        df.sort(order_col, inplace=True)
+    df.drop(order_col, axis=1, inplace=True)
+    return result
+
+def _split_df_by_groups(df, by, n_section):
+    size = df.shape[0]
+    section_size = _auto_chunksize(size, n_section)
+    sections = []
+    start = 0
+    for i in range(n_section-1):
+        stop = start + section_size
+        while stop<size and df[by].iloc[stop-1]==df[by].iloc[stop]:
+            stop += 1
+        sections.append(xrange(start, stop))
+        start = stop
+    sections.append(xrange(start, size))
+    return sections

@@ -67,3 +67,13 @@ def test_split():
     )
     assert all(result0==result)
 
+def test_sort():
+    df, by, result0 = prepare_df()
+    result = groupby_apply(
+        df, by, mean_score_series, 
+        algorithm='sort',
+        processes=processes,
+        chunksize=chunksize,
+        use_pathos=use_pathos
+    )
+    assert all(result0==result)
