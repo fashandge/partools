@@ -11,7 +11,7 @@ A parallel version of map function. It is designed for infinitely parallelizable
  However, in many scenarios, the children processes just read different parts of the big data structure, do some processing and return some results. It is unnecessary to copy the big data structure, which is also enabled by the copy-on-write mechanism of linux (but not in windows). The solution is to let the big data structrue be a temporary *global* variable of the calling module for multiprocessing, and do NOT pass the data  structure directly as an argument for worker function. This function encapsulates all those messy details so that we use it as if it is the standard map function with a few additional options to exploit multiple cores.
     
 ###Example usages:
-Currently the package has two functions: (1) *map*, for general data processing. (2) *groupby_apply*, for pandas dataframe grouping and parallel processing of groups.
+Currently the package has two functions: (1) `map`, for general data processing. (2) `groupby_apply`, for pandas dataframe grouping and parallel processing of groups.
 
 \* Note: In this example, the parallel map is not faster than non-parallel map or simply numpy.sum. This is for demonstrating example usage and testing correctness. 
 

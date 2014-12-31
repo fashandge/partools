@@ -1,11 +1,6 @@
 import numpy as np
 import pandas as pd
-develop = False
-if develop:
-    import src.parmap.parmap as parmap
-    from IPython.core.debugger import Tracer
-else:
-    import parmap
+from ..pandas_util import groupby_apply
 
 # settings
 processes = 4
@@ -41,7 +36,7 @@ def prepare_df():
 
 def test_iter():
     df, by, result0 = prepare_df()
-    result = parmap.groupby_apply(
+    result = groupby_apply(
         df, by, mean_score_series, 
         algorithm='default',
         processes=processes,
@@ -52,7 +47,7 @@ def test_iter():
 
 def test_iter_local():
     df, by, result0 = prepare_df()
-    result = parmap.groupby_apply(
+    result = groupby_apply(
         df, by, mean_score_series, 
         algorithm='iter_local',
         processes=processes,
@@ -63,7 +58,7 @@ def test_iter_local():
 
 def test_split():
     df, by, result0 = prepare_df()
-    result = parmap.groupby_apply(
+    result = groupby_apply(
         df, by, mean_score_series, 
         algorithm='split',
         processes=processes,

@@ -1,7 +1,7 @@
 #!/bin/bash
-cp -r ~/temporal/src/parmap/* parmap
-sed -r 's/develop = True/develop = False/' parmap/tests
-find parmap/tests/ -type f -exec sed -i -e 's/develop = True/develop = False/' {} \;
+mkdir -p partools
+cp -r ~/temporal/utils/parallel/* partools
+sed -i 's/_DEBUG = True/_DEBUG = False/' partools/config.py
 
-cd parmap
+cd partools
 nosetests

@@ -27,16 +27,13 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-setup(name='parmap',
-      version=find_version('parmap/__init__.py'),
-      description=('A parallel version of map that can drop-in replace standard map ',
-                   'in most cases. ',
-                   'It is desinged to avoid unnecessary copy of large shared data structures.'
-                  ),
+setup(name='partools',
+      version=find_version('partools/__init__.py'),
+      description=('Utility functions for embarassingly parallel processing with multicores on a single machine, including a parallel version of map, and parallel processing of pandas dataframe.'),
       long_description=long_description,
       author='Jianfu Chen',
       license='APACHE-2.0',
-      url='https://github.com/fashandge/parmap',
+      url='https://github.com/fashandge/partools',
       #py_modules=['parmap'],
       classifiers=[
         'Development Status :: 3 - Alpha',

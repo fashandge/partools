@@ -1,0 +1,8 @@
+#!/bin/bash
+if (($#<1)); then
+    echo 'enter message'
+    exit
+fi
+git commit -am "$1"
+git push origin master
+git fetch origin

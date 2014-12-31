@@ -1,4 +1,7 @@
-from .parmap import map, groupby_apply
+from .parmap import map 
+from .pandas_util import groupby_apply
+
+__all__ = ['map', 'groupby_apply']
 
 __version__ = '0.1.1'
 

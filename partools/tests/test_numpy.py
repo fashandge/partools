@@ -1,11 +1,6 @@
 import numpy
-develop = False
-if develop:
-    import src.parmap.parmap as parmap
-    from IPython.core.debugger import Tracer
-else:
-    import parmap
 from nose.tools import *
+from .. import parmap
 
 def test_equal():
     import numpy as np

@@ -12,4 +12,5 @@
 
 #vi swp files
 *.swp
+*.vim
 
