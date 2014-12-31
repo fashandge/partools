@@ -1,7 +1,7 @@
 parmap
 =============
 
-A parallel version of map function. It is designed for infinitely parallelizable tasks on a single machine with multiple cores, in a memory-efficient way. It can drop-in replace the standard map function in most cases, and harness the power of multiple cores. It is based on the pathos and toolz packages.
+A parallel version of map function. It is designed for infinitely parallelizable tasks on a single machine with multiple cores, in a memory-efficient way. It can drop-in replace the standard map function in most cases, and harness the power of multiple cores. It also has utility for parallel processing of the popular pandas dataframes. It is based on the pathos and toolz packages.
     It has the following features:
  
  +  **Ease of use**. It can serve almost a drop-in replacement for the standard non-parallel map function, while magically exploiting the multiple cores in your box. Optionally, if you encounter worker function pickling issue, set use\_pathos=True (require [pathos package](https://github.com/uqfoundation/pathos/blob/master/pathos) that uses dill package). 
@@ -11,6 +11,8 @@ A parallel version of map function. It is designed for infinitely parallelizable
  However, in many scenarios, the children processes just read different parts of the big data structure, do some processing and return some results. It is unnecessary to copy the big data structure, which is also enabled by the copy-on-write mechanism of linux (but not in windows). The solution is to let the big data structrue be a temporary *global* variable of the calling module for multiprocessing, and do NOT pass the data  structure directly as an argument for worker function. This function encapsulates all those messy details so that we use it as if it is the standard map function with a few additional options to exploit multiple cores.
     
 ###Example usages:
+Currently the package has two functions: (1) *map*, for general data processing. (2) *groupby_apply*, for pandas dataframe grouping and parallel processing of groups.
+
 \* Note: In this example, the parallel map is not faster than non-parallel map or simply numpy.sum. This is for demonstrating example usage and testing correctness. 
 
 See more discussions and a more realistic scenario on parallel processing of pandas data frame at [StackOverflow](http://stackoverflow.com/a/27683040/1100430)
@@ -43,4 +45,6 @@ assert(total_sum == big_array.sum())
 ### Dependencies
 Tested with python 2.7 in linux with the following packages:
 + [toolz 0.6.0](https://pypi.python.org/pypi/toolz)
-+ [pathos 0.2a1.dev](http://danse.cacr.caltech.edu/packages/dev_danse_us/pathos-0.2a.dev-20130811.zip) [optional] ([installation guide](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/Installation))
++ cPickle
++ [pathos 0.2a1.dev](http://danse.cacr.caltech.edu/packages/dev_danse_us/pathos-0.2a.dev-20130811.zip) \[optional\] ([installation guide](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/Installation))
++ numpy and pandas, if you want to process pandas dataframe in parallel

@@ -47,8 +47,8 @@ def map(func, iterable, global_arg=None,
     Parameters
     ----------
     func : worker function func with one or two arguments
-        1. global_arg is None: func(local_arg) should accept one argument
-        2. global_arg is not None: func(local_arg, global_arg) should accept two arguments
+        1. if global_arg is None: func(local_arg) should accept one argument
+        2. if global_arg is not None: func(local_arg, global_arg) should accept two arguments
         To use standard multiprocessing module (use_pathos=False), this function usually is a function 
         in a module or a partial function (say using toolz or functools). For inner function or lambda functions,
         need to use_pathos for correct pickling.
@@ -110,7 +110,7 @@ def map(func, iterable, global_arg=None,
             result = __builtin__.map(process_func, iterable)
         else:
             if use_pathos and mp_pathos is None:
-                raise Exception()
+                raise Exception('pathos package not available, cannot use_pathos=Ture')
             mp = mp_pathos if use_pathos else mp_std
             pool = mp.Pool(processes=processes)
             result = pool.map_async(process_func, 
@@ -274,9 +274,8 @@ def _groupby_apply_iter(df, by, apply_func, processes=2,
     return result
 
 def _combine_apply_results(labels_values, by):
-    labels, values = zip(*labels_values)
-    labels = list(labels)
-    values = list(values)
+    labels = [label for label, _ in labels_values]
+    values = [value for _, value in labels_values]
 
     if isinstance(values[0], pd.DataFrame):
         result = pd.concat(values)
@@ -365,34 +364,34 @@ def _split_groups(grouped, chunksize):
 
 
 if __name__ == '__main__':
-        ''' Note: In this example, the parallel map is not faster than 
-        non-parallel map or simply numpy.sum. This is for demonstrating example usage and testing correctness.
-        
-        A more realistic scenario I find good speedup with parallel map is when processing a big pandas.DataFrame
-        (e.g., groupby then aggregation or apply), we let each worker process one part of the big dataframe, and 
-        let the dataframe be the global_arg, which saves expensive copy operations, hence enjoying the speedup 
-        from multiprocessing. See more discussions and another example at 
-        [StackOverflow](http://stackoverflow.com/a/27683040/1100430)
-        '''
-        
-        import numpy as np
+    ''' Note: In this example, the parallel map is not faster than 
+    non-parallel map or simply numpy.sum. This is for demonstrating example usage and testing correctness.
+    
+    A more realistic scenario I find good speedup with parallel map is when processing a big pandas.DataFrame
+    (e.g., groupby then aggregation or apply), we let each worker process one part of the big dataframe, and 
+    let the dataframe be the global_arg, which saves expensive copy operations, hence enjoying the speedup 
+    from multiprocessing. See more discussions and another example at 
+    [StackOverflow](http://stackoverflow.com/a/27683040/1100430)
+    '''
+    
+    import numpy as np
 
-        # Suppose we want to compute the sum of a large array
-        big_array = np.random.rand(1e6, 100)
-        
-        # worker function that sums of a sub section of the array
-        def section_sum(section, array):
-            return array[section].sum()
-        
-        # split the big array into sections of 10000 rows, a worker sum up one section at a time.
-        # To avoid expensive copy of the big array, pass it as the global_arg;
-        # Pass indices of each array section as local_args to workers, which is not much data.
-        section_size = 10000
-        sections = [xrange(start, start+section_size) 
-                    for start in xrange(0, big_array.shape[0], section_size)]
-        # return a list of sum, one for each section
-        section_sum_list = map(section_sum, sections, global_arg=big_array,
-                               chunksize=25, processes=4)
-        total_sum = sum(section_sum_list) # reduce results
-        
-        assert np.allclose(total_sum, big_array.sum())
+    # Suppose we want to compute the sum of a large array
+    big_array = np.random.rand(1e6, 100)
+    
+    # worker function that sums of a sub section of the array
+    def section_sum(section, array):
+        return array[section].sum()
+    
+    # split the big array into sections of 10000 rows, a worker sum up one section at a time.
+    # To avoid expensive copy of the big array, pass it as the global_arg;
+    # Pass indices of each array section as local_args to workers, which is not much data.
+    section_size = 10000
+    sections = [xrange(start, start+section_size) 
+                for start in xrange(0, big_array.shape[0], section_size)]
+    # return a list of sum, one for each section
+    section_sum_list = map(section_sum, sections, global_arg=big_array,
+                           chunksize=25, processes=4)
+    total_sum = sum(section_sum_list) # reduce results
+    
+    assert np.allclose(total_sum, big_array.sum())
