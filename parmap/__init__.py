@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-from .parmap import map, dfg_apply
+from .parmap import map, groupby_apply
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 def _readme():
     from os import path
@@ -11,4 +10,3 @@ def _readme():
         return f.read()
 
 __doc__ = _readme()
-
