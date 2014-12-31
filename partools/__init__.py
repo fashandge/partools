@@ -3,7 +3,7 @@ from .pandas_util import groupby_apply
 
 __all__ = ['map', 'groupby_apply']
 
-__version__ = '0.1.1'
+__version__ = '0.2.0'
 
 def _readme():
     from os import path
