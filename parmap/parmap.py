@@ -208,6 +208,8 @@ def groupby_apply(df, by, apply_func,
         apply function
     algorithm : string, default 'default'
         specify which algorithm to use. Leave it as default most of the time
+    chunksize : int, default -1
+        use -1 to choose chunksize automatically 
     groupby_kwargs : optional keyword arguments
         optional keyword arguments for df.groupby
 
