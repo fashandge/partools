@@ -15,21 +15,20 @@
 #   limitations under the License.
 import sys
 import cPickle
-import random
-import string
 import toolz
 import multiprocessing as mp_std
 try:
     import pathos.multiprocessing as mp_pathos
 except:
     mp_pathos = None
+from . import global_manager as gm
 from .config import *
 
 # Used as the timeout
 GOOGLE = 1e100
 
 def map(func, iterable, global_arg=None,
-        chunksize=1, processes=2, use_pathos=False):
+        chunksize=1, processes=2, use_pathos='auto'):
     ''' A parallel version of standard map function. It is a blocking operation and return ordered results.
 
     If you want to process a read-only large data structure by parts in parallel, put it in the global_arg. 
@@ -61,9 +60,10 @@ def map(func, iterable, global_arg=None,
         number of children processes (workers) in the pool, set it up to the number of physical cores.
         Same as in the standard Pool.map. If processes=1, it is equivalent to non-parallel map.
 
-    use_pathos: boolean, default False
+    use_pathos: boolean or string 'auto', default 'auto'
         use pathos.multiprocessing or standard multiprocessing package. Recommend to use latter most of the time
-        as it is faster in general. Only when your function cannot be pickled will you consider use pathos.
+        as it is faster in general. Only when your function cannot be pickled will you consider use pathos. If set
+        to 'auto', the function will set use_pathos=False if it can pickle the function, otherwise True.
 
     Returns
     -------
@@ -77,24 +77,14 @@ def map(func, iterable, global_arg=None,
     --------
     See main function.
     '''
-    if not use_pathos and processes != 1:
-        _trypickle(func)
-    global_arg_name = None
-    pool = None
-    try:
-        if global_arg is None:
-            process_func = func
-        else:
-            global_arg_name = _random_string(10, prefix='_tmp_global_arg')
-            # use a temporary global variable to hold the large object global_arg
-            globals()[global_arg_name] = global_arg
+    if processes != 1:
+        use_pathos = _determine_pathos_usage(func, use_pathos)
 
-            # partial function can be pickled by multiprocessing
-            # but not inner function
-            process_func = toolz.partial(
-                _func_with_global,
-                global_arg_name=global_arg_name,
-                func=func
+    try:
+        pool = None
+        process_func, global_arg_name = \
+            wrap_global_arg(
+                func, global_arg
             )
 
         if processes == 1:
@@ -116,10 +106,32 @@ def map(func, iterable, global_arg=None,
         print 'exception in parallel map: {}'.format(ex)
         raise ex
     finally:
-        glb = globals()
-        if global_arg_name is not None and global_arg_name in glb:
-            del glb[global_arg_name]
+        gm.remove_global_arg(global_arg_name)
         _terminate_pool(pool)
+
+def wrap_global_arg(func, global_arg, use_toolz=True):
+    if global_arg is None:
+        process_func = func
+        global_arg_name = None
+    else:
+        process_func, global_arg_name = \
+            _create_func_with_global(
+                func, global_arg, 
+                use_toolz=use_toolz
+            )
+    return process_func, global_arg_name
+
+def _determine_pathos_usage(func, use_pathos):
+    if use_pathos == False:
+        _trypickle(func)
+    elif use_pathos == 'auto':
+        try:
+            _trypickle(func, silent=True)
+        except:
+            use_pathos = True
+        else:
+            use_pathos = False
+    return use_pathos
 
 def _terminate_pool(pool):
     if pool is not None:
@@ -127,31 +139,52 @@ def _terminate_pool(pool):
         pool.terminate()
         pool.join()
 
+def _create_func_with_global(func, global_arg, use_toolz=True):
+    # use a temporary global variable to hold the large object global_arg
+    global_arg_name = gm.set_global_arg(global_arg)
+
+    # partial function can be pickled by multiprocessing
+    # but not inner function.
+    _partial = toolz.partial if use_toolz else partial
+    process_func = _partial(
+        _func_with_global,
+        global_arg_name=global_arg_name,
+        func=func
+    )
+    return process_func, global_arg_name
+
+# if some library doesn't accept toolz.partial, (say pd.dataframe.groupby().apply)
+# try this implementation for paritial
+def partial(_function, *args, **keywords):
+    def newfunc(*fargs, **fkeywords):
+        newkeywords = keywords.copy()
+        newkeywords.update(fkeywords)
+        return _function(*(args + fargs), **newkeywords)
+    newfunc.func = _function
+    newfunc.args = args
+    newfunc.keywords = keywords
+    return newfunc
+
 # wrap the original worker function using a temporary global variable name
 # so that we just pass a name (string) instead of the actual big object (global_arg) to 
 # the wrapped worker function
 def _func_with_global(local_arg, global_arg_name, func):
     try:
-        global_arg = globals()[global_arg_name] 
+        #global_arg = globals()[global_arg_name] 
+        global_arg = gm.get_global_arg(global_arg_name)
         return func(local_arg, global_arg)
     except KeyboardInterrupt:
         print 'KeyboardInterrupt'
 
-_charset = string.ascii_letters + string.digits
-def _random_string(length, prefix='', suffix=''):
-    return '{}{}{}'.format(
-        prefix+'_' if prefix else '',
-        ''.join(random.sample(_charset, length)),
-        '_'+suffix if suffix else ''
-    )
-
-def _trypickle(func):
+def _trypickle(func, silent=False):
     """
     Attempts to pickle func since multiprocessing needs to do this.
 
     copied from Rosseta package.
     """
-    genericmsg = "Pickling of func (necessary for multiprocessing) failed."
+    genericmsg = ("Pickling of func (necessary for multiprocessing) failed. "
+                  "Please refactor the function to be a top-level function in "
+                  "a module, or set use_pathos=True if you have pathos installed.")
 
     boundmethodmsg = genericmsg + '\n\n' + """
     func contained a bound method, and these cannot be pickled.  This causes
@@ -171,15 +204,16 @@ def _trypickle(func):
     try:
         cPickle.dumps(func)
     except TypeError as e:
-        if 'instancemethod' in e.message:
-            sys.stderr.write(boundmethodmsg + "\n")
-        else:
-            sys.stderr.write(genericmsg + '\n')
+        if not silent:
+            if 'instancemethod' in e.message:
+                sys.stderr.write(boundmethodmsg + "\n")
+            else:
+                sys.stderr.write(genericmsg + '\n')
         raise
     except:
-        sys.stderr.write(genericmsg + '\n')
+        if not silent:
+            sys.stderr.write(genericmsg + '\n')
         raise
-
 
 if __name__ == '__main__':
     ''' Note: In this example, the parallel map is not faster than 

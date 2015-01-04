@@ -52,10 +52,6 @@ setup(name='partools',
       packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
       # If there are data files included in your packages that need to be
       # installed, specify them here.  If using Python 2.6 or less, then these
-      # have to be included in MANIFEST.in as well.
-      #package_data={
-      #    'parmap': ['README.md'],
-      #},
       # include README.md to . dir
       data_files=[('', ['README.md'])],
       include_package_data=True,

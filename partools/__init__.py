@@ -1,7 +1,7 @@
 from .parmap import map 
-from .pandas_util import groupby_apply
+from .pandas_util import groupby_apply, series_apply
 
-__all__ = ['map', 'groupby_apply']
+__all__ = ['map', 'groupby_apply', 'series_apply']
 
 __version__ = '0.1.1'
 
