@@ -15,7 +15,7 @@
 #   limitations under the License.
 import sys
 import cPickle
-import toolz
+import functools
 import multiprocessing as mp_std
 try:
     import pathos.multiprocessing as mp_pathos
@@ -41,7 +41,7 @@ def map(func, iterable, global_arg=None,
         1. if global_arg is None: func(local_arg) should accept one argument
         2. if global_arg is not None: func(local_arg, global_arg) should accept two arguments
         To use standard multiprocessing module (use_pathos=False), this function usually is a function 
-        in a module or a partial function (say using toolz or functools). For inner function or lambda functions,
+        in a module or a partial function (say using functools or functools). For inner function or lambda functions,
         need to use_pathos for correct pickling.
 
     iterable : iterable
@@ -77,26 +77,27 @@ def map(func, iterable, global_arg=None,
     --------
     See main function.
     '''
-    if processes != 1:
-        use_pathos = _determine_pathos_usage(func, use_pathos)
+    # separate processes==1 case for easy debugging
+    # because the try-except block makes debugging inconvenient
+    if processes == 1:
+        import __builtin__
+        process_func = _wrap_global_arg_single_process(
+            func, global_arg)
+        return __builtin__.map(process_func, iterable)
 
+    use_pathos = _determine_pathos_usage(func, use_pathos)
     try:
         pool = None
-        process_func, global_arg_name = \
-            wrap_global_arg(
-                func, global_arg
-            )
+        process_func, global_arg_name = _wrap_global_arg(
+            func, global_arg)
 
-        if processes == 1:
-            import __builtin__
-            result = __builtin__.map(process_func, iterable)
-        else:
-            if use_pathos and mp_pathos is None:
-                raise Exception('pathos package not available, cannot use_pathos=Ture')
-            mp = mp_pathos if use_pathos else mp_std
-            pool = mp.Pool(processes=processes)
-            result = pool.map_async(process_func, 
-                                    iterable, chunksize=chunksize).get(GOOGLE)
+        if use_pathos and mp_pathos is None:
+            raise Exception('pathos package not available, '
+                            'cannot use_pathos=Ture')
+        mp = mp_pathos if use_pathos else mp_std
+        pool = mp.Pool(processes=processes)
+        result = pool.map_async(process_func, 
+                                iterable, chunksize=chunksize).get(GOOGLE)
 
         return result
     except KeyboardInterrupt:
@@ -109,7 +110,15 @@ def map(func, iterable, global_arg=None,
         gm.remove_global_arg(global_arg_name)
         _terminate_pool(pool)
 
-def wrap_global_arg(func, global_arg, use_toolz=True):
+def _wrap_global_arg_single_process(func, global_arg):
+    import __builtin__
+    if global_arg is None:
+        process_func = func
+    else:
+        process_func = lambda x: func(x, global_arg)
+    return process_func
+
+def _wrap_global_arg(func, global_arg, use_functools=True):
     if global_arg is None:
         process_func = func
         global_arg_name = None
@@ -117,7 +126,7 @@ def wrap_global_arg(func, global_arg, use_toolz=True):
         process_func, global_arg_name = \
             _create_func_with_global(
                 func, global_arg, 
-                use_toolz=use_toolz
+                use_functools=use_functools
             )
     return process_func, global_arg_name
 
@@ -139,13 +148,13 @@ def _terminate_pool(pool):
         pool.terminate()
         pool.join()
 
-def _create_func_with_global(func, global_arg, use_toolz=True):
+def _create_func_with_global(func, global_arg, use_functools=True):
     # use a temporary global variable to hold the large object global_arg
     global_arg_name = gm.set_global_arg(global_arg)
 
     # partial function can be pickled by multiprocessing
     # but not inner function.
-    _partial = toolz.partial if use_toolz else partial
+    _partial = functools.partial if use_functools else partial
     process_func = _partial(
         _func_with_global,
         global_arg_name=global_arg_name,
@@ -153,7 +162,7 @@ def _create_func_with_global(func, global_arg, use_toolz=True):
     )
     return process_func, global_arg_name
 
-# if some library doesn't accept toolz.partial, (say pd.dataframe.groupby().apply)
+# if some library doesn't accept functools.partial, (say pd.dataframe.groupby().apply)
 # try this implementation for paritial
 def partial(_function, *args, **keywords):
     def newfunc(*fargs, **fkeywords):

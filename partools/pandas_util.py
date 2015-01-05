@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-import toolz
+from functools import partial
+import itertools
 from . import parmap
 from . import global_manager as gm
 from .config import *
@@ -53,16 +54,18 @@ def groupby_apply(df, by, func,
     -------
     A dataframe : usually the same as non-parallel version
     '''
-    try:
-        # the pandas.DataFrame.groupby().apply doesn't accept toolz.partial function
-        # so use our own implementation parmap.partial
-        process_func, global_arg_name = parmap.wrap_global_arg(
-            func, global_arg, use_toolz=False)
+    if processes == 1: # no-parallel processing
+        process_func = parmap._wrap_global_arg_single_process(
+            func, global_arg)
+        return _vanilla_groupby_apply(
+            df, by, process_func, use_agg=use_agg, 
+            **groupby_kwargs)
 
-        if processes == 1: # no-parallel processing
-            return _vanilla_groupby_apply(
-                df, by, process_func, use_agg=use_agg, 
-                **groupby_kwargs)
+    try:
+        # the pandas.DataFrame.groupby().apply doesn't accept partial function
+        # so use our own implementation parmap.partial
+        process_func, global_arg_name = parmap._wrap_global_arg(
+            func, global_arg, use_functools=False)
 
         #first sort then split the df into sections, and process each section in parallel
         #This can be the fastest version of groupby_apply*, if sorting df is quick.
@@ -107,12 +110,14 @@ def series_apply(series, func, global_arg=None,
                  processes=2, chunksize=-1, 
                  use_pathos='auto', **apply_kwargs):
     '''parallel series apply, similar to series.apply(func)'''
-    try:
-        process_func, global_arg_name = parmap.wrap_global_arg(
-            func, global_arg, use_toolz=False)
+    if processes == 1: # no-parallel processing
+        process_func = parmap._wrap_global_arg_single_process(
+            func, global_arg)
+        return series.apply(process_func, **apply_kwargs)
 
-        if processes == 1:
-            return series.apply(process_func, **apply_kwargs)
+    try:
+        process_func, global_arg_name = parmap._wrap_global_arg(
+            func, global_arg, use_functools=False)
 
         #if global_arg is not None and use_pathos=='auto':
         #    use_pathos = True
@@ -120,7 +125,7 @@ def series_apply(series, func, global_arg=None,
         if chunksize == -1:
             chunksize = 1
         sections = _auto_chunks(series.shape[0], processes)
-        worker = toolz.partial(_apply_series_section, 
+        worker = partial(_apply_series_section, 
                                func=process_func, **apply_kwargs)
         result = parmap.map(
             worker,
@@ -174,7 +179,7 @@ def _groupby_apply_sort(df, by, func,
         chunksize = 1
     sections = _split_df_by_groups(df, by, processes)
 
-    worker = toolz.partial(_group_apply_dfsection, by=by, 
+    worker = partial(_group_apply_dfsection, by=by, 
                            func=func, use_agg=use_agg,
                            **kwargs)
     result = parmap.map(
@@ -209,7 +214,7 @@ def _groupby_apply_split(df, by, func, use_agg=False,
     #timer.stop('split groups')
     grouped = None
 
-    worker = toolz.partial(_group_apply_dfsection, by=by, 
+    worker = partial(_group_apply_dfsection, by=by, 
                            func=func, use_agg=use_agg,
                            **kwargs)
     results = parmap.map(worker, sections, global_arg=df,
@@ -239,8 +244,8 @@ def _split_groups(grouped, chunksize):
     group_indices = indices.values()
     ngroups = len(group_indices)
     return [
-        list(toolz.concat(
-            group_indices[slice(start, min(start+chunksize, ngroups))]
+        list(itertools.chain(
+            *group_indices[slice(start, min(start+chunksize, ngroups))]
             ))
             for start in xrange(0, ngroups, chunksize)]
 
@@ -276,7 +281,7 @@ def _groupby_apply_iter_local(df, by, func, use_agg=False,
         default_chunksize = 10
         chunksize = min(default_chunksize, 
                         _auto_chunksize(grouped.ngroups, processes))
-    process_group = toolz.partial(
+    process_group = partial(
         _process_named_group, by=by, 
         func=func)
     labels_values = parmap.map(process_group, grouped, 
@@ -297,7 +302,7 @@ def _groupby_apply_iter(df, by, func,
 
     if chunksize == -1:
         chunksize = min(10, _auto_chunksize(n_group, processes))
-    process_group = toolz.partial(
+    process_group = partial(
         _process_named_group_i, by=by, 
         func=func)
     labels_values = parmap.map(process_group, xrange(n_group), global_arg=n_g,
